@@ -4,29 +4,11 @@ import matplotlib.pyplot as plt
 import numpy as np
 import scipy.integrate
 from pwm import ramp, sawtooth, pwm
-
-def digitalplotter(t, *signals):
-    '''return a plotting function that takes an axis and plots
-digital signals (or other signals in the 0-1 range)'''
-  def f(ax):
-    n = len(signals)
-    for (i,sig) in enumerate(signals):
-      ofs = (n - 1 - i)*1.1
-      plotargs = []
-      for y in sig[1:]:
-        if isinstance(y,str):
-          plotargs += [y]
-        else:
-          plotargs += [t, y + ofs]
-      ax.plot(*plotargs)
-    ax.set_yticks((n - 1 - np.arange(n))*1.1 + 0.55)
-    ax.set_yticklabels([sig[0] for sig in signals])
-    ax.set_ylim(-0.1, n*1.1)
-  return f
+from plot import digitalplotter
 
 def extendrange(ra, rb):
-    '''return a tuple (x1,x2) representing the interval from x1 to x2,
-  given two input ranges of the same form, or None (representing no input).'''
+# return a tuple (x1,x2) representing the interval from x1 to x2,
+# given two input ranges of the same form, or None (representing no input).
     if ra is None:
         return rb
     elif rb is None:
@@ -35,10 +17,10 @@ def extendrange(ra, rb):
         return (min(ra[0], rb[0]), max(ra[1], rb[1]))
 
 def createLimits(margin, *args):
-    '''add proportional margin to an interval:
-createLimits(0.1, (1,3),(2,4),(0,2)) calculates the maximum extent
-of the ranges provided, in this case (0,4), and adds another 0.1 (10%)
-to the extent symmetrically, thus returning (-0.2, 4.2).'''
+# add proportional margin to an interval:
+# createLimits(0.1, (1,3),(2,4),(0,2)) calculates the maximum extent
+# of the ranges provided, in this case (0,4), and adds another 0.1 (10%)
+# to the extent symmetrically, thus returning (-0.2, 4.2).
     r = None
     for x in args:
         r = extendrange(r, (np.min(x), np.max(x)))
@@ -47,11 +29,11 @@ to the extent symmetrically, thus returning (-0.2, 4.2).'''
 
 
 def calcripple(t, y):
-    ''' calculate ripple current by integrating the input,
-then adjusting it by a linear function to put both endpoints
-at the same value. The slope of the linear function is the
-mean value of the input; the offset is chosen to make the mean value
-of the output ripple current = 0.'''
+# calculate ripple current by integrating the input,
+# then adjusting it by a linear function to put both endpoints
+# at the same value. The slope of the linear function is the
+# mean value of the input; the offset is chosen to make the mean value
+# of the output ripple current = 0.
     T = t[-1] - t[0]
     yint0 = np.append([0], scipy.integrate.cumtrapz(y, t))
     # cumtrapz produces a vector of length N-1
@@ -63,7 +45,7 @@ of the output ripple current = 0.'''
 
 
 def showripple(fig, t, Va, Vb, titlestring):
-    '''plot ripple current as well as phase duty cycles and load voltage'''
+# plot ripple current as well as phase duty cycles and load voltage
     axlist = []
     Iab = calcripple(t, Va - Vb)
     margin = 0.1
