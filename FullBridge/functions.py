@@ -80,6 +80,22 @@ def calcripple(t, y):
     return yint1 - meanval1
 
 
+def calc_CM_ripple(t, y):
+    # calculate ripple current by integrating the input,
+    # then adjusting it by a linear function to put both endpoints
+    # at the same value. The slope of the linear function is the
+    # mean value of the input; the offset is chosen to make the mean value
+    # of the output ripple current = 0.
+    T = t[-1] - t[0]
+    yint0 = np.append([0], scipy.integrate.cumtrapz(y, t))
+    # cumtrapz produces a vector of length N-1
+    # so we need to add one element back in at the beginning
+    meanval0 = yint0[-1] / T
+    yint1 = yint0 - (t - t[0]) * meanval0
+    meanval1 = scipy.integrate.trapz(yint1, t) / T
+    return yint0
+
+
 def annotate_level(ax, t, yline, ytext, text, style='k:'):
     tlim = [min(t), max(t)]
     tannot0 = tlim[0] + (tlim[1] - tlim[0]) * 0.5
@@ -107,21 +123,33 @@ def showripple(fig, t, Va, Vb, I_Ldc, titlestring):
     Iabripple = calcripple(t, Va - Vb)
     Iab = Iabripple + I_Ldc
     margin = 0.1
-    ax = fig.add_subplot(3, 1, 1)
+
+    ax = fig.add_subplot(4, 1, 1)
     digitalplotter(t, ('Va', Va), ('Vb', Vb))(ax)
     ax.set_ylabel('Phase duty cycles')
+    ax.grid(True)
     axlist.append(ax)
 
-    ax = fig.add_subplot(3, 1, 2)
+    ax = fig.add_subplot(4, 1, 2)
     ax.plot(t, Va - Vb)
     ax.set_ylim(createLimits(margin, Va - Vb))
-    ax.set_ylabel('Load voltage')
+    ax.set_ylabel('Diff. node voltage')
+    ax.grid(True)
     axlist.append(ax)
 
-    ax = fig.add_subplot(3, 1, 3)
+    ax = fig.add_subplot(4, 1, 3)
     ax.plot(t, Iab)
     ax.set_ylim(createLimits(margin, Iab))
-    ax.set_ylabel('Load current')
+    ax.set_ylabel('DM L ripple')
+    ax.grid(True)
+    axlist.append(ax)
+    annotate_ripple(ax, t, Iab, I_Ldc)
+
+    ax = fig.add_subplot(4, 1, 4)
+    ax.plot(t, Iab)
+    ax.set_ylim(createLimits(margin, Iab))
+    ax.set_ylabel('CM L ripple')
+    ax.grid(True)
     axlist.append(ax)
     annotate_ripple(ax, t, Iab, I_Ldc)
 
