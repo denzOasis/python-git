@@ -80,22 +80,6 @@ def calcripple(t, y):
     return yint1 - meanval1
 
 
-def calc_CM_ripple(t, y):
-    # calculate ripple current by integrating the input,
-    # then adjusting it by a linear function to put both endpoints
-    # at the same value. The slope of the linear function is the
-    # mean value of the input; the offset is chosen to make the mean value
-    # of the output ripple current = 0.
-    T = t[-1] - t[0]
-    yint0 = np.append([0], scipy.integrate.cumtrapz(y, t))
-    # cumtrapz produces a vector of length N-1
-    # so we need to add one element back in at the beginning
-    meanval0 = yint0[-1] / T
-    yint1 = yint0 - (t - t[0]) * meanval0
-    meanval1 = scipy.integrate.trapz(yint1, t) / T
-    return yint0
-
-
 def annotate_level(ax, t, yline, ytext, text, style='k:'):
     tlim = [min(t), max(t)]
     tannot0 = tlim[0] + (tlim[1] - tlim[0]) * 0.5
@@ -117,41 +101,77 @@ def annotate_ripple(ax, t, Iab, I_Ldc):
         annotate_level(ax, t, y, yofs * 0.3 + I_Ldc, '$I_{Ldc} %+.5f$' % yofs)
 
 
+def annotate_ripple_V(ax, t, Vab, V_Cdc):
+    # annotate with peak values
+    for y in [min(Vab), max(Vab)]:
+        yofs = y - V_Cdc
+        annotate_level(ax, t, y, yofs * 0.3 + V_Cdc, '$V_{Cdc} %+.5f$' % yofs)
+
+
 def showripple(fig, t, Va, Vb, I_Ldc, titlestring):
-    # plot ripple current as well as phase duty cycles and load voltage
+
     axlist = []
-    Iabripple = calcripple(t, Va - Vb)
-    Iab = Iabripple + I_Ldc
     margin = 0.1
 
-    ax = fig.add_subplot(4, 1, 1)
-    digitalplotter(t, ('Va', Va), ('Vb', Vb))(ax)
-    ax.set_ylabel('Phase duty cycles')
+    # ripple voltage in inductor is determined by the common mode voltage across it
+    vCMp = Va - 0.5
+    iCMripplep = 2*calcripple(t, vCMp) # twice because half the DM inductance
+    vCMn = Vb - 0.5
+    iCMripplen = 2 * calcripple(t, vCMn)  # twice because half the DM inductance
+
+    # only the differential part of the common mode ripple causes a capacitor
+    # voltage ripple since the common mode part cancels out
+    vDM = Va - Vb
+    iDMripple = calcripple(t, vDM)
+    vDMripple = calcripple(t, iDMripple)
+
+
+
+    ax = fig.add_subplot(6, 1, 1)
+    digitalplotter(t, ('Da', Va), ('Db', Vb))(ax)
+    ax.set_ylabel('branch duty cycles')
     ax.grid(True)
     axlist.append(ax)
 
-    ax = fig.add_subplot(4, 1, 2)
-    ax.plot(t, Va - Vb)
-    ax.set_ylim(createLimits(margin, Va - Vb))
-    ax.set_ylabel('Diff. node voltage')
+    ax = fig.add_subplot(6, 1, 2)
+    ax.plot(t, vCMp)
+    ax.plot(t, vCMn)
+    ax.set_ylim(createLimits(margin, vCMp))
+    ax.set_ylabel('CM voltage [V]')
     ax.grid(True)
     axlist.append(ax)
 
-    ax = fig.add_subplot(4, 1, 3)
-    ax.plot(t, Iab)
-    ax.set_ylim(createLimits(margin, Iab))
-    ax.set_ylabel('DM L ripple')
+    ax = fig.add_subplot(6, 1, 3)
+    ax.plot(t, iCMripplep)
+    ax.plot(t, iCMripplen)
+    ax.set_ylim(createLimits(margin, iCMripplep))
+    ax.set_ylabel('CM current [A]')
     ax.grid(True)
     axlist.append(ax)
-    annotate_ripple(ax, t, Iab, I_Ldc)
+    annotate_ripple(ax, t, iCMripplep, I_Ldc)
 
-    ax = fig.add_subplot(4, 1, 4)
-    ax.plot(t, Iab)
-    ax.set_ylim(createLimits(margin, Iab))
-    ax.set_ylabel('CM L ripple')
+    ax = fig.add_subplot(6, 1, 4)
+    ax.plot(t, vDM)
+    ax.set_ylim(createLimits(margin, vDM))
+    ax.set_ylabel('DM voltage [V]')
     ax.grid(True)
     axlist.append(ax)
-    annotate_ripple(ax, t, Iab, I_Ldc)
+
+    ax = fig.add_subplot(6, 1, 5)
+    ax.plot(t, iDMripple)
+    ax.set_ylim(createLimits(margin, iDMripple))
+    ax.set_ylabel('DM current [A]')
+    ax.grid(True)
+    axlist.append(ax)
+    annotate_ripple(ax, t, iDMripple, I_Ldc)
+
+    ax = fig.add_subplot(6, 1, 6)
+    ax.plot(t, vDMripple)
+    ax.set_ylim(createLimits(margin, vDMripple))
+    ax.set_ylabel('Capacitor ripple [V]')
+    ax.grid(True)
+    axlist.append(ax)
+    annotate_ripple_V(ax, t, vDMripple, 0)
 
     fig.suptitle(titlestring, fontsize=16)
     return axlist
@@ -176,6 +196,7 @@ def show1period(Da,Db):
   ax.plot(t1period,Ir)
   ax.set_xlim(-0.1,1.1)
   ax.set_ylim(min(Ir)*1.2,max(Ir)*1.2)
+  ax.grid(True)
   # now annotate
   (D1,D2,V) = (Db,Da,1) if Da > Db else (Da,Db,-1)
   tpts = np.array([0, D1/2, D2/2, 0.5, 1-(D2/2), 1-(D1/2), 1])
@@ -203,24 +224,28 @@ def showripple2(fig, t, pwmA, pwmB, I_Ldc, I_S, titlestring=''):
     ax = fig.add_subplot(4, 1, 1)
     digitalplotter(t, ('Va', pwmA), ('Vb', pwmB))(ax)
     ax.set_ylabel('Phase duty cycles')
+    ax.grid(True)
     axlist.append(ax)
 
     ax = fig.add_subplot(4, 1, 2)
     ax.plot(t, pwmA - pwmB)
     ax.set_ylim(createLimits(margin, pwmA - pwmB))
     ax.set_ylabel('Load voltage')
+    ax.grid(True)
     axlist.append(ax)
 
     ax = fig.add_subplot(4, 1, 3)
     ax.plot(t, Iab)
     ax.set_ylim(createLimits(margin, Iab))
     ax.set_ylabel('Ripple current')
+    ax.grid(True)
     axlist.append(ax)
 
     ax = fig.add_subplot(4, 1, 3)
     ax.plot(t, Iab)
     ax.set_ylim(createLimits(margin, Iab))
     ax.set_ylabel('$I_L$', fontsize=14)
+    ax.grid(True)
     axlist.append(ax)
     annotate_ripple(ax, t, Iab, I_Ldc)
 
@@ -228,6 +253,7 @@ def showripple2(fig, t, pwmA, pwmB, I_Ldc, I_S, titlestring=''):
     ax.plot(t, Icdc)
     ax.set_ylim(createLimits(margin, Icdc))
     ax.set_ylabel('$I_{CDC}$', fontsize=14)
+    ax.grid(True)
     axlist.append(ax)
 
     fig.suptitle(titlestring, fontsize=16)
@@ -259,11 +285,13 @@ def split_Icdc_1(fig, t, Da, Db, I_Ldc, centeralign=True):
     ax = fig.add_subplot(3, 1, 1)
     ax.plot(t, -I_S * np.ones_like(t))
     ax.set_ylabel('$-I_S$', fontsize=15)
+    ax.grid(True)
     axlist.append(ax)
 
     ax = fig.add_subplot(3, 1, 2)
     ax.plot(t, Icdc, t, Iab * s, '--r')
     ax.set_ylabel('$I_{CDC}: I_S = 0$', fontsize=15)
+    ax.grid(True)
     annotate_level(ax, t, Icdc_mean, np.max(Icdc) / 3, 'mean = %.3f' % Icdc_mean)
     axlist.append(ax)
     fig.text(0.1, 0.5, '+', fontsize=28)
@@ -271,6 +299,7 @@ def split_Icdc_1(fig, t, Da, Db, I_Ldc, centeralign=True):
     ax = fig.add_subplot(3, 1, 3)
     ax.plot(t, Icdc - I_S)
     ax.set_ylabel('$I_{CDC}$', fontsize=15)
+    ax.grid(True)
     annotate_level(ax, t, Icdc_mean - I_S, (np.min(Icdc) - I_S) / 3,
                    'mean = %.3f' % (Icdc_mean - I_S))
     axlist.append(ax)

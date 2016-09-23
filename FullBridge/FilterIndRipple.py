@@ -7,23 +7,16 @@ import scipy.integrate
 from functions import *
 
 # init
-Da, Db = 0.75, 0.25
+Da, Db = 0.8, 0.2
 D0 = (Da + Db)/2
 iL = 0
 
 # create a time vector
 t = np.arange(0,4,0.0005)
-
-T = t[-1] - t[0]
-print(T)
-yint0 = np.append([0], scipy.integrate.cumtrapz(Da - Db, t))
-meanval0 = yint0[-1] / T
-yint1 = yint0 - (t - t[0]) * meanval0
-meanval1 = scipy.integrate.trapz(yint1, t) / T
-
+pwmA = pwm(t,0.5,centeralign=False)
 # plot inductor current ripple
 fig = plt.figure(figsize=(8, 6), dpi=80)
-showpwmripple(fig,t,Da,Db,iL,centeralign=True);
+showpwmripple(fig,t,Da,Db, iL, centeralign=True);
 plt.show()
 
 # # plot ripple over duty cycle
