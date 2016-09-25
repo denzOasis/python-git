@@ -7,12 +7,13 @@ import scipy.integrate
 def ramp(t): return t % 1
 
 
-def sawtooth(t): return 1 - abs(2 * (t % 1) - 1)
+def sawtooth(t, shift=False):
+    return 1 - abs(2 * (t % 1) - 1) if shift else abs(2 * (t % 1) - 1)
 
 
-def pwm(t, D, centeralign=False):
+def pwm(t, D, centeralign=False, shift=False):
     # generate PWM signals with duty cycle D
-    return ((sawtooth(t) if centeralign else ramp(t)) <= D) * 1.0
+    return ((sawtooth(t, shift) if centeralign else ramp(t)) <= D) * 1.0
 
 
 def rms(t, y):
@@ -94,46 +95,34 @@ def annotate_level(ax, t, yline, ytext, text, style='k:'):
                                                 % (-90 if ytext < yline else 90)))
 
 
-def annotate_ripple(ax, t, Iab, I_Ldc):
+def annotate_ripple(ax, t, Xab, VI):
     # annotate with peak values
-    for y in [min(Iab), max(Iab)]:
-        yofs = y - I_Ldc
-        annotate_level(ax, t, y, yofs * 0.3 + I_Ldc, '$I_{Ldc} %+.5f$' % yofs)
+    for y in [min(Xab), max(Xab)]:
+        yofs = y
+        if (VI == 0):
+            annotate_level(ax, t, y, yofs * 0.3, '$I_{Ldc} %+.5f$' % yofs)
+        else:
+            annotate_level(ax, t, y, yofs * 0.3, '$V_{Cdc} %+.5f$' % yofs)
 
 
-def annotate_ripple_V(ax, t, Vab, V_Cdc):
-    # annotate with peak values
-    for y in [min(Vab), max(Vab)]:
-        yofs = y - V_Cdc
-        annotate_level(ax, t, y, yofs * 0.3 + V_Cdc, '$V_{Cdc} %+.5f$' % yofs)
-
-
-def showripple(fig, t, Va, Vb, I_Ldc, titlestring):
+def showripple_HB1(fig, t, Va, Vb, titlestring):
 
     axlist = []
     margin = 0.1
 
-    # ripple voltage in inductor is determined by the common mode voltage across it
     vCMp = Va - 0.5
-    iCMripplep = 2*calcripple(t, vCMp) # twice because half the DM inductance
+    iCMripplep = 2*calcripple(t, vCMp)
     vCMn = Vb - 0.5
-    iCMripplen = 2 * calcripple(t, vCMn)  # twice because half the DM inductance
+    iCMripplen = 2 * calcripple(t, vCMn)
+    iC = iCMripplep + iCMripplen
 
-    # only the differential part of the common mode ripple causes a capacitor
-    # voltage ripple since the common mode part cancels out
-    vDM = Va - Vb
-    iDMripple = calcripple(t, vDM)
-    vDMripple = calcripple(t, iDMripple)
-
-
-
-    ax = fig.add_subplot(6, 1, 1)
+    ax = fig.add_subplot(3, 1, 1)
     digitalplotter(t, ('Da', Va), ('Db', Vb))(ax)
     ax.set_ylabel('branch duty cycles')
     ax.grid(True)
     axlist.append(ax)
 
-    ax = fig.add_subplot(6, 1, 2)
+    ax = fig.add_subplot(3, 1, 2)
     ax.plot(t, vCMp)
     ax.plot(t, vCMn)
     ax.set_ylim(createLimits(margin, vCMp))
@@ -141,49 +130,147 @@ def showripple(fig, t, Va, Vb, I_Ldc, titlestring):
     ax.grid(True)
     axlist.append(ax)
 
-    ax = fig.add_subplot(6, 1, 3)
+    ax = fig.add_subplot(3, 1, 3)
+    ax.plot(t, iCMripplep)
+    ax.plot(t, iCMripplen)
+    ax.plot(t, iC)
+    ax.set_ylim(createLimits(margin, iCMripplep))
+    ax.set_ylabel('CM current [A]')
+    ax.grid(True)
+    axlist.append(ax)
+    annotate_ripple(ax, t, iCMripplep, 0)
+
+    fig.suptitle(titlestring, fontsize=16)
+    return axlist
+
+def showripple_HB2(fig, t, Va, Vb, titlestring):
+
+    axlist = []
+    margin = 0.1
+
+    vCMp = Va - 0.5
+    iCMripplep = 2*calcripple(t, vCMp)
+    vCMn = Vb - 0.5
+    iCMripplen = 2 * calcripple(t, vCMn)
+    iC = iCMripplep + iCMripplen
+    vC = calcripple(t, iC)
+
+    ax = fig.add_subplot(4, 1, 1)
+    digitalplotter(t, ('Da', Va), ('Db', Vb))(ax)
+    ax.set_ylabel('branch duty cycles')
+    ax.grid(True)
+    axlist.append(ax)
+
+    ax = fig.add_subplot(4, 1, 2)
+    ax.plot(t, vCMp)
+    ax.plot(t, vCMn)
+    ax.set_ylim(createLimits(margin, vCMp))
+    ax.set_ylabel('CM voltage [V]')
+    ax.grid(True)
+    axlist.append(ax)
+
+    ax = fig.add_subplot(4, 1, 3)
+    ax.plot(t, iCMripplep)
+    ax.plot(t, iCMripplen)
+    ax.plot(t, iC)
+    ax.set_ylim(createLimits(margin, iCMripplep))
+    ax.set_ylabel('CM current [A]')
+    ax.grid(True)
+    axlist.append(ax)
+    annotate_ripple(ax, t, iCMripplep, 0)
+
+    ax = fig.add_subplot(4, 1, 4)
+    ax.plot(t, vC)
+    ax.set_ylim(createLimits(margin, vC))
+    ax.set_ylabel('Capacitor ripple [V]')
+    ax.grid(True)
+    axlist.append(ax)
+    annotate_ripple(ax, t, vC, 1)
+
+    fig.suptitle(titlestring, fontsize=16)
+    return axlist
+
+
+def showCMripple(fig, t, Va, Vb, titlestring):
+
+    axlist = []
+    margin = 0.1
+
+    # ripple voltage in inductor is determined by the common mode voltage across it
+    vCMp = Va - 0.5
+    iCMripplep = 2*calcripple(t, vCMp)    # twice because half the DM inductance
+    vCMn = -Vb + 0.5
+    iCMripplen = 2 * calcripple(t, vCMn)  # twice because half the DM inductance
+
+    ax = fig.add_subplot(3, 1, 1)
+    digitalplotter(t, ('Da', Va), ('Db', Vb))(ax)
+    ax.set_ylabel('branch duty cycles')
+    ax.grid(True)
+    axlist.append(ax)
+
+    ax = fig.add_subplot(3, 1, 2)
+    ax.plot(t, vCMp)
+    ax.plot(t, vCMn)
+    ax.set_ylim(createLimits(margin, vCMp))
+    ax.set_ylabel('CM voltage [V]')
+    ax.grid(True)
+    axlist.append(ax)
+
+    ax = fig.add_subplot(3, 1, 3)
     ax.plot(t, iCMripplep)
     ax.plot(t, iCMripplen)
     ax.set_ylim(createLimits(margin, iCMripplep))
     ax.set_ylabel('CM current [A]')
     ax.grid(True)
     axlist.append(ax)
-    annotate_ripple(ax, t, iCMripplep, I_Ldc)
+    annotate_ripple(ax, t, iCMripplep, 0)
 
-    ax = fig.add_subplot(6, 1, 4)
+    fig.suptitle(titlestring, fontsize=16)
+    return axlist
+
+
+def showDMripple(fig, t, Va, Vb, titlestring):
+
+    axlist = []
+    margin = 0.1
+
+    # only the differential part of the common mode ripple causes a capacitor
+    # voltage ripple since the common mode part cancels out
+    vDM = Va - Vb
+    iDMripple = calcripple(t, vDM)
+    vDMripple = calcripple(t, iDMripple)
+
+    ax = fig.add_subplot(4, 1, 1)
+    digitalplotter(t, ('Da', Va), ('Db', Vb))(ax)
+    ax.set_ylabel('branch duty cycles')
+    ax.grid(True)
+    axlist.append(ax)
+
+    ax = fig.add_subplot(4, 1, 2)
     ax.plot(t, vDM)
     ax.set_ylim(createLimits(margin, vDM))
     ax.set_ylabel('DM voltage [V]')
     ax.grid(True)
     axlist.append(ax)
 
-    ax = fig.add_subplot(6, 1, 5)
+    ax = fig.add_subplot(4, 1, 3)
     ax.plot(t, iDMripple)
     ax.set_ylim(createLimits(margin, iDMripple))
     ax.set_ylabel('DM current [A]')
     ax.grid(True)
     axlist.append(ax)
-    annotate_ripple(ax, t, iDMripple, I_Ldc)
+    annotate_ripple(ax, t, iDMripple, 0)
 
-    ax = fig.add_subplot(6, 1, 6)
+    ax = fig.add_subplot(4, 1, 4)
     ax.plot(t, vDMripple)
     ax.set_ylim(createLimits(margin, vDMripple))
     ax.set_ylabel('Capacitor ripple [V]')
     ax.grid(True)
     axlist.append(ax)
-    annotate_ripple_V(ax, t, vDMripple, 0)
+    annotate_ripple(ax, t, vDMripple, 1)
 
     fig.suptitle(titlestring, fontsize=16)
     return axlist
-
-
-def showpwmripple(fig, t, Da, Db, I_Ldc, centeralign=False):
-    return showripple(fig, t,
-                      pwm(t, Da, centeralign),
-                      pwm(t, Db, centeralign),
-                      I_Ldc,
-                      titlestring='%s-aligned pwm, $D_a$=%.3f, $D_b$=%.3f, $I_{Ldc}$=%.3f' %
-                                  ('Center' if centeralign else 'Edge', Da, Db, I_Ldc))
 
 
 def show1period(Da,Db):
@@ -247,7 +334,7 @@ def showripple2(fig, t, pwmA, pwmB, I_Ldc, I_S, titlestring=''):
     ax.set_ylabel('$I_L$', fontsize=14)
     ax.grid(True)
     axlist.append(ax)
-    annotate_ripple(ax, t, Iab, I_Ldc)
+    annotate_ripple(ax, t, Iab, 0)
 
     ax = fig.add_subplot(4, 1, 4)
     ax.plot(t, Icdc)
