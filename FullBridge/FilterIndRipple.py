@@ -28,8 +28,9 @@ Vb = pwm(t, Db, centeralign = True)
 
 # plot common mode inductor current ripple
 fig = plt.figure(figsize=(8, 6), dpi=80)
-showCMripple(fig,t,Va,Vb, 'Inductor current ripple');
+showCMripple(fig,t,Va,Vb, 'Max. inductor current ripple in voltage mode')
 plt.show()
+fig.savefig('VM_L_ripple.pdf')
 
 # create pwm signals
 # DM inductor current ripple is max. at Da = 75, Db = 0.25 -> Vout = +-Vdc/2
@@ -40,8 +41,9 @@ Vb = pwm(t, Db, centeralign = True)
 
 # plot differential mode inductor current ripple and capacitor voltage ripple
 fig = plt.figure(figsize=(8, 8), dpi=80)
-showDMripple(fig,t,Va,Vb, 'Capacitor voltage ripple');
+showDMripple(fig,t,Va,Vb, 'Max. capacitor voltage ripple in voltage mode')
 plt.show()
+fig.savefig('VM_C_ripple.pdf')
 
 # system parameters
 Vdc = 38
@@ -62,8 +64,9 @@ Vb = pwm(t, Db, centeralign = True, shift=False)
 
 # plot inductor current ripple
 fig = plt.figure(figsize=(8, 6), dpi=80)
-showripple_HB1(fig,t,Va,Vb, 'Inductor current ripple');
+showripple_HB1(fig,t,Va,Vb, 'Max. inductor current ripple in current mode')
 plt.show()
+fig.savefig('CM_L_ripple.pdf')
 
 # create pwm signals
 # capacitor voltage ripple is max. at Da = Db = 0.75
@@ -74,8 +77,9 @@ Vb = pwm(t, Db, centeralign = True, shift=False)
 
 # plot capacitor voltage ripple
 fig = plt.figure(figsize=(8, 8), dpi=80)
-showripple_HB2(fig,t,Va,Vb, 'Capacitor voltage ripple');
+showripple_HB2(fig,t,Va,Vb, 'Max. capacitor voltage ripple in current mode')
 plt.show()
+fig.savefig('CM_C_ripple.pdf')
 
 
 # # plot ripple over duty cycle
@@ -83,21 +87,5 @@ plt.show()
 # plt.plot(D,abs(D)*(1-abs(D)))
 # plt.xlabel('net duty cycle $D = D_a - D_b$',fontsize=16)
 # plt.ylabel('ripple current / $I_{R0}$',fontsize=16)
-# plt.grid()
-# plt.show()
-#
-# #
-# fig = plt.figure(figsize=(8, 6), dpi=80)
-# intcodes = 'ABCD'
-# axlist = showpwmripple(fig,t,Da,Db,iL,centeralign=True)
-# for (i,tcenter) in enumerate([0.5, 1-(Da+Db)/4, 1, 1+(Da+Db)/4]):
-#     y = (i/2) * 1.1 + 0.55
-#     intcode = '[%s]' % intcodes[i]
-#     axlist[0].annotate(intcode,xy=(tcenter,y),
-#         horizontalalignment='center',
-#         verticalalignment='center')
-#     axlist[2].annotate(intcode,xy=(tcenter,0.05),
-#         horizontalalignment='center',
-#         verticalalignment='center')
 # plt.grid()
 # plt.show()
