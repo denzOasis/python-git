@@ -1,13 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="91f41986-6065-4934-a00d-5c793fdd8622" name="Default" comment="added half bridge">
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/modules.xml" afterPath="$PROJECT_DIR$/.idea/modules.xml" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/python-git.iml" afterPath="$PROJECT_DIR$/.idea/python-git.iml" />
+    <list default="true" id="91f41986-6065-4934-a00d-5c793fdd8622" name="Default" comment="">
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/FullBridge/FilterIndRipple.py" afterPath="$PROJECT_DIR$/FullBridge/FilterIndRipple.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/FullBridge/functions.py" afterPath="$PROJECT_DIR$/FullBridge/functions.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/FullBridge/test.py" afterPath="$PROJECT_DIR$/FullBridge/test.py" />
     </list>
     <ignored path="python-git.iws" />
     <ignored path=".idea/workspace.xml" />
@@ -30,8 +26,8 @@
       <file leaf-file-name="FilterIndRipple.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/FullBridge/FilterIndRipple.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="213">
-              <caret line="118" column="17" selection-start-line="118" selection-start-column="17" selection-end-line="118" selection-end-column="17" />
+            <state relative-caret-position="437">
+              <caret line="185" column="16" selection-start-line="185" selection-start-column="16" selection-end-line="185" selection-end-column="16" />
               <folding />
             </state>
           </provider>
@@ -50,7 +46,7 @@
       <file leaf-file-name="functions.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/FullBridge/functions.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="585">
+            <state relative-caret-position="555">
               <caret line="39" column="0" selection-start-line="39" selection-start-column="0" selection-end-line="39" selection-end-column="0" />
               <folding>
                 <element signature="e#25#56#0" expanded="true" />
@@ -128,8 +124,6 @@
       <foldersAlwaysOnTop value="true" />
     </navigator>
     <panes>
-      <pane id="Scope" />
-      <pane id="Scratches" />
       <pane id="ProjectPane">
         <subPane>
           <PATH>
@@ -164,6 +158,8 @@
           </PATH>
         </subPane>
       </pane>
+      <pane id="Scope" />
+      <pane id="Scratches" />
     </panes>
   </component>
   <component name="PropertiesComponent">
@@ -432,7 +428,14 @@
       <option name="project" value="LOCAL" />
       <updated>1474828828159</updated>
     </task>
-    <option name="localTasksCounter" value="5" />
+    <task id="LOCAL-00005" summary="added HCA">
+      <created>1476036588203</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1476036588203</updated>
+    </task>
+    <option name="localTasksCounter" value="6" />
     <servers />
   </component>
   <component name="TodoView">
@@ -483,7 +486,8 @@
     <MESSAGE value="imported matplotlib" />
     <MESSAGE value="created plot.py" />
     <MESSAGE value="added half bridge" />
-    <option name="LAST_COMMIT_MESSAGE" value="added half bridge" />
+    <MESSAGE value="added HCA" />
+    <option name="LAST_COMMIT_MESSAGE" value="added HCA" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
@@ -867,7 +871,7 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/FullBridge/functions.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="585">
+        <state relative-caret-position="555">
           <caret line="39" column="0" selection-start-line="39" selection-start-column="0" selection-end-line="39" selection-end-column="0" />
           <folding>
             <element signature="e#25#56#0" expanded="true" />
@@ -877,8 +881,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/FullBridge/FilterIndRipple.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="213">
-          <caret line="118" column="17" selection-start-line="118" selection-start-column="17" selection-end-line="118" selection-end-column="17" />
+        <state relative-caret-position="437">
+          <caret line="185" column="16" selection-start-line="185" selection-start-column="16" selection-end-line="185" selection-end-column="16" />
           <folding />
         </state>
       </provider>
