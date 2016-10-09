@@ -2,6 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
+      <module fileurl="file://$USER_HOME$/PycharmProjects/Bathtub/.idea/Bathtub.iml" filepath="$USER_HOME$/PycharmProjects/Bathtub/.idea/Bathtub.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/python-git.iml" filepath="$PROJECT_DIR$/.idea/python-git.iml" />
     </modules>
   </component>

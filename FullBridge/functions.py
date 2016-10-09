@@ -4,21 +4,20 @@ import matplotlib.pyplot as plt
 import numpy as np
 import scipy.integrate
 
-def ramp(t): return t % 1
+def ramp(t, fs=1, shift=0):
+    T = 1/fs
+    Tshift = shift*T/360
+    return (t + Tshift)%(1/fs)*fs
 
+def sawtooth(t, fs=1, shift=0):
+    return abs(2*ramp(t, fs, shift) - 1)
 
-def sawtooth(t, shift=False):
-    return 1 - abs(2 * (t % 1) - 1) if shift else abs(2 * (t % 1) - 1)
-
-
-def pwm(t, D, centeralign=False, shift=False):
+def pwm(t, D=0.5, fs=1, centeralign=False, shift=0):
     # generate PWM signals with duty cycle D
-    return ((sawtooth(t, shift) if centeralign else ramp(t)) <= D) * 1.0
-
+    return ((sawtooth(t, fs, shift) if centeralign else ramp(t, fs, shift)) <= D) * 1.0
 
 def rms(t, y):
     return np.sqrt(np.trapz(y * y, t) / (np.amax(t) - np.amin(t)))
-
 
 def digitalplotter(t, *signals):
     # return a plotting function that takes an axis and plots
@@ -95,25 +94,22 @@ def annotate_level(ax, t, yline, ytext, text, style='k:'):
                                                 % (-90 if ytext < yline else 90)))
 
 
-def annotate_ripple(ax, t, Xab, VI):
+def annotate_ripple(ax,t,Iab,I_Ldc):
     # annotate with peak values
-    for y in [min(Xab), max(Xab)]:
-        yofs = y
-        if (VI == 0):
-            annotate_level(ax, t, y, yofs * 0.3, '$I_{Ldc} %+.5f$' % yofs)
-        else:
-            annotate_level(ax, t, y, yofs * 0.3, '$V_{Cdc} %+.5f$' % yofs)
+    for y in [min(Iab),max(Iab)]:
+      yofs = y-I_Ldc
+      annotate_level(ax,t,y,yofs*0.3 + I_Ldc, '$I_{Ldc} %+.3f$' % yofs)
 
 
-def showripple_HB1(fig, t, Va, Vb, titlestring):
+def showripple_HB1(fig, t, Va, Vb, Ir0, titlestring):
 
     axlist = []
     margin = 0.1
 
     vCMp = Va - 0.5
-    iCMripplep = 2*calcripple(t, vCMp)
+    iCMripplep = Ir0*2*calcripple(t, vCMp)
     vCMn = Vb - 0.5
-    iCMripplen = 2 * calcripple(t, vCMn)
+    iCMripplen = Ir0*2*calcripple(t, vCMn)
     iC = iCMripplep + iCMripplen
 
     ax = fig.add_subplot(3, 1, 1)
@@ -143,15 +139,15 @@ def showripple_HB1(fig, t, Va, Vb, titlestring):
     fig.suptitle(titlestring, fontsize=16)
     return axlist
 
-def showripple_HB2(fig, t, Va, Vb, titlestring):
+def showripple_HB2(fig, t, Va, Vb, Ir0, titlestring):
 
     axlist = []
     margin = 0.1
 
     vCMp = Va - 0.5
-    iCMripplep = 2*calcripple(t, vCMp)
+    iCMripplep = Ir0*2*calcripple(t, vCMp)
     vCMn = Vb - 0.5
-    iCMripplen = 2 * calcripple(t, vCMn)
+    iCMripplen = Ir0*2*calcripple(t, vCMn)
     iC = iCMripplep + iCMripplen
     vC = calcripple(t, iC)
 

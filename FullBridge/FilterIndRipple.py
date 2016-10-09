@@ -7,85 +7,189 @@ import scipy.integrate
 from functions import *
 
 # general
-t = np.arange(0, 4, 1e-4)
+fs = 200e3
+t = np.arange(0, 4/fs, 1/fs/10e3)
 
+# CVA-VM
 # system parameters
 Vdc = 450
-fs = 200e3
-L = 2*200e-6
+L = 200e-6*2
 C = (680e-9/2)*3
 
-Ir0 = Vdc/fs/L
-Vr0 = Ir0/fs/C
-
-# voltage mode
-# create pwm signals
 # inductor current ripple is max. at Da = Db = 0.5 due to the common mode currents
 Da = 0.5
 Db = 0.5
-Va = pwm(t, Da, centeralign = True)
-Vb = pwm(t, Db, centeralign = True)
+Va = Vdc*pwm(t, Da, fs, centeralign = True, shift=0) - Vdc/2
+Vb = Vdc*pwm(t, Db, fs, centeralign = True, shift=180) - Vdc/2
+Ia = calcripple(t, Va)/(L/2)
+Ib = calcripple(t, Vb)/(L/2)
 
-# plot common mode inductor current ripple
+# plot
+axlist = []
 fig = plt.figure(figsize=(8, 6), dpi=80)
-showCMripple(fig,t,Va,Vb, 'Max. inductor current ripple in voltage mode')
+fig.suptitle('CVA-VM max. inductor current ripple')
+ax = fig.add_subplot(2, 1, 1)
+ax.plot(t, Va)
+ax.plot(t, Vb)
+ax.set_ylim(createLimits(.1, Va))
+ax.set_ylabel('voltage [V]')
+ax.grid(True)
+axlist.append(ax)
+ax = fig.add_subplot(2, 1, 2)
+ax.plot(t, Ia)
+ax.plot(t, Ib)
+ax.set_ylabel('current [A]')
+annotate_ripple(ax, t, Ia, 0)
+ax.set_xlabel('time [sec]')
+ax.grid(True)
 plt.show()
-fig.savefig('VM_L_ripple.pdf')
+fig.savefig('CVA_VM_L_ripple.pdf')
 
-# create pwm signals
-# DM inductor current ripple is max. at Da = 75, Db = 0.25 -> Vout = +-Vdc/2
+
+# max. capacitor current ripple is determined by the differential mode inductor current ripple
+# it is max. at Da = 75, Db = 0.25 -> Vout = +-Vdc/2
 Da = 0.75
 Db = 0.25
-Va = pwm(t, Da, centeralign = True)
-Vb = pwm(t, Db, centeralign = True)
+Va = Vdc*pwm(t, Da, fs, centeralign = True)
+Vb = Vdc*pwm(t, Db, fs, centeralign = True)
+Vdm = Va - Vb
+Il = calcripple(t, Vdm)/L
+Vc = calcripple(t, Il)/C
 
-# plot differential mode inductor current ripple and capacitor voltage ripple
-fig = plt.figure(figsize=(8, 8), dpi=80)
-showDMripple(fig,t,Va,Vb, 'Max. capacitor voltage ripple in voltage mode')
+# plot
+fig = plt.figure(figsize=(8, 6), dpi=80)
+fig.suptitle('CVA-VM max. capacitor voltage ripple')
+ax = fig.add_subplot(3, 1, 1)
+ax.plot(t, Vdm)
+ax.set_ylim(createLimits(.1, Va))
+ax.set_ylabel('voltage [V]')
+ax.grid(True)
+ax = fig.add_subplot(3, 1, 2)
+ax.plot(t, Il)
+ax.set_ylabel('current [A]')
+ax.grid(True)
+annotate_ripple(ax, t, Il, 0)
+ax = fig.add_subplot(3, 1, 3)
+ax.plot(t, Vc)
+ax.set_ylabel('voltage [V]')
+ax.grid(True)
+annotate_ripple(ax, t, Vc, 0)
+ax.set_xlabel('time [sec]')
 plt.show()
-fig.savefig('VM_C_ripple.pdf')
+fig.savefig('CVA_VM_C_ripple.pdf')
 
+# CVA-CM
 # system parameters
-Vdc = 38
-fs = 200e3
+Vdc = 2*38
 L = 10e-6
 C = 680e-9*2
 
-Ir0 = Vdc/fs/L
-Vr0 = Ir0/fs/C
-
-# current mode
-# create pwm signals
 # inductor current ripple is max. at Da = Db = 0.5
 Da = 0.5
 Db = 0.5
-Va = pwm(t, Da, centeralign = True, shift=True)
-Vb = pwm(t, Db, centeralign = True, shift=False)
+Va = Vdc*pwm(t, Da, fs, centeralign = True, shift=0) - Vdc/2
+Vb = Vdc*pwm(t, Db, fs, centeralign = True, shift=180) - Vdc/2
 
-# plot inductor current ripple
+Ia = calcripple(t, Va)/L
+Ib = calcripple(t, Vb)/L
+
+# plot
 fig = plt.figure(figsize=(8, 6), dpi=80)
-showripple_HB1(fig,t,Va,Vb, 'Max. inductor current ripple in current mode')
+fig.suptitle('CVA-CM max. inductor current ripple')
+ax = fig.add_subplot(2, 1, 1)
+ax.plot(t, Va)
+ax.plot(t, Vb)
+ax.set_ylim(createLimits(.1, Va))
+ax.set_ylabel('voltage [V]')
+ax.grid(True)
+ax = fig.add_subplot(2, 1, 2)
+ax.plot(t, Ia)
+ax.plot(t, Ib)
+ax.set_ylabel('current [A]')
+annotate_ripple(ax, t, Ia, 0)
+ax.set_xlabel('time [sec]')
+ax.grid(True)
 plt.show()
-fig.savefig('CM_L_ripple.pdf')
+fig.savefig('CVA_CM_L_ripple.pdf')
 
-# create pwm signals
-# capacitor voltage ripple is max. at Da = Db = 0.75
-Da = 0.75
-Db = 0.75
-Va = pwm(t, Da, centeralign = True, shift=True)
-Vb = pwm(t, Db, centeralign = True, shift=False)
+# capacitor voltage ripple is max. at Da = 75, Db = 0.75 -> Vout = +-Vdc/2
+# assuming that the total ripple flows over the capacitor
+D = 0.75
+Va = Vdc*pwm(t, D, fs, centeralign = True, shift=0) - Vdc/2
+Vb = Vdc*pwm(t, D, fs, centeralign = True, shift=180) - Vdc/2
 
-# plot capacitor voltage ripple
-fig = plt.figure(figsize=(8, 8), dpi=80)
-showripple_HB2(fig,t,Va,Vb, 'Max. capacitor voltage ripple in current mode')
+Ia = calcripple(t, Va)/L
+Ib = calcripple(t, Vb)/L
+Ic = Ia + Ib
+Vc = calcripple(t, Ic)/C
+
+# plot
+fig = plt.figure(figsize=(8, 6), dpi=80)
+fig.suptitle('CVA-CM max. capacitor voltage ripple')
+ax = fig.add_subplot(3, 1, 1)
+ax.plot(t, Va)
+ax.plot(t, Vb)
+ax.set_ylim(createLimits(.1, Va))
+ax.set_ylabel('voltage [V]')
+ax.grid(True)
+ax = fig.add_subplot(3, 1, 2)
+ax.plot(t, Ia)
+ax.plot(t, Ib)
+ax.plot(t, Ic)
+ax.set_ylabel('current [A]')
+ax.grid(True)
+annotate_ripple(ax, t, Il, 0)
+ax = fig.add_subplot(3, 1, 3)
+ax.plot(t, Vc)
+ax.set_ylabel('voltage [V]')
+ax.grid(True)
+annotate_ripple(ax, t, Vc, 0)
+ax.set_xlabel('time [sec]')
 plt.show()
-fig.savefig('CM_C_ripple.pdf')
+fig.savefig('CVA_CM_C_ripple.pdf')
 
+# HCA-CM
+# system parameters
+Vdc = 2*38
+L = 3e-6
+C = 3.3e-6*6
 
-# # plot ripple over duty cycle
-# D = np.arange(-1,1,0.005)
-# plt.plot(D,abs(D)*(1-abs(D)))
-# plt.xlabel('net duty cycle $D = D_a - D_b$',fontsize=16)
-# plt.ylabel('ripple current / $I_{R0}$',fontsize=16)
-# plt.grid()
-# plt.show()
+# capacitor voltage ripple is max. at D = 1/2 or 1/6 or 5/6
+# assuming that the total ripple flows over the capacitor
+D = 1/2
+Va = Vdc*pwm(t, D, fs, centeralign = True, shift=0) - Vdc/2
+Vb = Vdc*pwm(t, D, fs, centeralign = True, shift=120) - Vdc/2
+Vc = Vdc*pwm(t, D, fs, centeralign = True, shift=240) - Vdc/2
+
+Ia = calcripple(t, Va)/L
+Ib = calcripple(t, Vb)/L
+Ic = calcripple(t, Vc)/L
+iC = Ia + Ib + Ic
+vC = calcripple(t, iC)/C
+
+# plot
+fig = plt.figure(figsize=(8, 6), dpi=80)
+fig.suptitle('HCA-CM max. capacitor voltage ripple')
+ax = fig.add_subplot(3, 1, 1)
+ax.plot(t, Va)
+ax.plot(t, Vb)
+ax.plot(t, Vc)
+ax.set_ylim(createLimits(.1, Va))
+ax.set_ylabel('voltage [V]')
+ax.grid(True)
+ax = fig.add_subplot(3, 1, 2)
+ax.plot(t, Ia)
+ax.plot(t, Ib)
+ax.plot(t, Ic)
+ax.plot(t, iC)
+ax.set_ylabel('current [A]')
+ax.grid(True)
+annotate_ripple(ax, t, iC, 0)
+ax = fig.add_subplot(3, 1, 3)
+ax.plot(t, vC)
+ax.set_ylabel('voltage [V]')
+ax.grid(True)
+annotate_ripple(ax, t, vC, 0)
+ax.set_xlabel('time [sec]')
+plt.show()
+fig.savefig('HCA_CM_C_ripple.pdf')
